@@ -1,0 +1,9 @@
+# Databases
+db.sqlite3
+instance/
+
+# Environments
+.env
+.venv
+env/
+venv/
