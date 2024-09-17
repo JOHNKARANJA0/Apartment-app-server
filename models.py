@@ -22,7 +22,7 @@ class User(db.Model, SerializerMixin):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(15), unique=True, nullable=False)  # Changed to String to handle leading zeros
+    phone = db.Column(db.String(15), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     image = db.Column(db.String, nullable=True)
     _password_hash = db.Column('password_hash', db.String(128), nullable=False)
@@ -32,8 +32,8 @@ class User(db.Model, SerializerMixin):
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
     
     # Relationships
-    apartments = db.relationship('Apartment', backref='user', lazy=True, cascade='all, delete-orphan')
-    leases = db.relationship('Lease', backref='user', lazy=True, cascade='all, delete-orphan')
+    apartments = db.relationship('Apartment', back_populates='user', lazy=True, cascade='all, delete-orphan')
+    leases = db.relationship('Lease', back_populates='user', lazy=True, cascade='all, delete-orphan')
     
     # Serialization rules
     serialize_rules = ('-apartments.user', '-_password_hash', '-leases.user')
@@ -42,7 +42,6 @@ class User(db.Model, SerializerMixin):
     def validate_email(self, key, value):
         assert '@' in value, "Invalid Email provided"
         return value
-    
     @hybrid_property    
     def password_hash(self):
         raise AttributeError('Password hashes may not be viewed.')
@@ -71,7 +70,8 @@ class Apartment(db.Model, SerializerMixin):
     status_report = db.Column(db.String(50), nullable=False, default='Vacant') 
     
     # Relationships
-    leases = db.relationship('Lease', backref='apartment', lazy=True)
+    leases = db.relationship('Lease', back_populates='apartment', lazy=True)
+    user = db.relationship('User', back_populates='apartments')
     
     # Serialization rules
     serialize_rules = ('-user.apartments',)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import os
-from datetime import timedelta
+from datetime import timedelta,datetime
 import cloudinary
 from cloudinary.uploader import upload as cloudinary_upload
 import pyotp
@@ -17,7 +17,7 @@ from utils import generate_totp_secret, generate_totp_token, send_email
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]}})
 
-app.config['SQLALCHEMY_DATABASE_URI'] ='sqlite:///app.db' #os.environ.get('DATABASE_URI') 
+app.config['SQLALCHEMY_DATABASE_URI'] =os.environ.get('DATABASE_URI') #'sqlite:///app.db' 
 app.config["JWT_SECRET_KEY"] = "your_jwt_secret_key"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=1)
 app.config["SECRET_KEY"] = "your_secret_key"  
@@ -65,16 +65,16 @@ class CheckSession(Resource):
         if user:
             user.is_active = True
             db.session.commit()
-            apartment = [hse.to_dict() for hse in user.apartment]
-            lease = [leased.to_dict() for leased in user.lease]
+            apartments = [hse.to_dict() for hse in user.apartments]
+            leases = [leased.to_dict() for leased in user.leases]
             return {
                 "id": user.id,
                 "name": user.name,
                 "email": user.email,
                 "image": user.image,
                 "phone": user.phone,
-                "apartment": apartment,
-                "lease": lease,
+                "apartment": apartments,
+                "lease": leases,
                 "token_verified": user.token_verified,
                 "is_active": user.is_active,
             }, 200
@@ -145,7 +145,7 @@ class Users(Resource):
             email_sent = send_email(
                 to_email=data['email'],
                 subject="Your Verification Token",
-                body=f"""Hello, {data['name']}.\n Welcome to the Mugumo App.\nYour verification token is: {totp_token}. \n\nThank you,\nApartment MANAGEMENT"""
+                body=f"""Hello, {data['name']}.\n Welcome to the Mugumo App.\nYour verification token is: {totp_token}. \n\nThank you,\nAPARTMENT MANAGEMENT"""
             )
             if email_sent:
                 return {"success": "User created successfully! Verification token sent to email.", "user": new_user.to_dict()}, 201
@@ -258,8 +258,8 @@ class Leases(Resource):
             new_lease = Lease(
                 user_id=data['user_id'],
                 apartment_id=data['apartment_id'],
-                start_date=data.get('start_date'),
-                end_date=data.get('end_date'),
+                start_date=datetime.strptime(data['start_date'], '%d/%m/%Y').date(),
+                end_date=datetime.strptime(data['end_date'], '%d/%m/%Y').date(),
                 status=data.get('status', 'Pending')
             )
             db.session.add(new_lease)
@@ -305,8 +305,8 @@ class LeaseHistories(Resource):
             new_history = LeaseHistory(
                 user_id=data['user_id'],
                 apartment_id=data['apartment_id'],
-                start_date=data.get('start_date'),
-                end_date=data.get('end_date'),
+                start_date=datetime.strptime(data['start_date'], '%d/%m/%Y').date(),
+                end_date=datetime.strptime(data['end_date'], '%d/%m/%Y').date(),
                 status=data.get('status')
             )
             db.session.add(new_history)
